@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nachchaduwa Cascade System Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Custom scrollbar for the table */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c7c7cc;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a1a1aa;
+        }
+
+        /* Sticky header */
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body
+    class="text-gray-800 antialiased h-screen flex flex-col overflow-hidden bg-gradient-to-br from-blue-50 to-slate-100">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 z-20 shrink-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800 leading-tight">Cascade System Hydrology</h1>
+                    <p class="text-sm text-slate-500 font-medium">Nachchaduwa Hypothetical Data Model</p>
+                </div>
+            </div>
+            <div class="text-right hidden sm:block">
+                <div
+                    class="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+                    22 Weeks of Data
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <div
+        class="flex-1 flex flex-col lg:flex-row overflow-hidden max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 gap-6">
+
+        <!-- Sidebar / Week Selector -->
+        <aside
+            class="lg:w-64 flex-shrink-0 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-gray-100">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Timeline</h2>
+            </div>
+            <div id="weekSelector" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                <!-- Buttons will be injected here -->
+            </div>
+        </aside>
+
+        <!-- Main Table Area -->
+        <main
+            class="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative">
+
+            <!-- Table Header Info -->
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-white z-10 shrink-0">
+                <div>
+                    <h2 id="currentWeekTitle" class="text-xl font-bold text-slate-800">Week 1 Overview</h2>
+                    <p class="text-sm text-slate-500 mt-1">Showing Catchment and Upstream Routing</p>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="flex-1 overflow-auto custom-scrollbar bg-slate-50">
+                <table class="min-w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-white border-b border-gray-200 shadow-sm text-slate-600">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 font-semibold tracking-wide border-r border-gray-100">Node
+                                / Tank</th>
+                            <th scope="col"
+                                class="px-6 py-4 font-semibold tracking-wide text-right border-r border-gray-100">
+                                Catchment Runoff (m³)</th>
+                            <th scope="col"
+                                class="px-6 py-4 font-semibold tracking-wide text-right border-r border-gray-100">
+                                Upstream Inflow (m³)</th>
+                            <th scope="col" class="px-6 py-4 font-semibold tracking-wide text-right">Total Inflow (m³)
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-gray-100 bg-white">
+                        <!-- Rows injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // Formatter for numbers (adds commas and ensures 2 decimal places)
+        const formatNumber = (numStr) => {
+            const num = parseFloat(numStr);
+            if (isNaN(num)) return numStr;
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
+        // Raw Tab-Separated Data from your previous chat (Weeks 1 to 22)
+        const rawData = `
+1	Tank 1	6134.8	0	6134.8
+1	Tank 2	14022.4	6134.8	20157.2
+1	Tank 3	15687.56	20157.2	35844.76
+1	Tank 4	1752.8	0	1752.8
+1	Tank 5	13584.2	37597.56	51181.76
+1	Tank 6	16038.12	0	16038.12
+1	Tank 7	8676.36	16038.12	24714.48
+1	Tank 8	3856.16	0	3856.16
+1	Tank 9	2541.56	0	2541.56
+1	Tank 10	8150.52	0	8150.52
+1	Tank 11	8588.72	0	8588.72
+1	Tank 12	8062.88	8588.72	16651.6
+1	Tank 13	11831.4	0	11831.4
+1	Tank 14	3680.88	0	3680.88
+1	Tank 15	41541.36	122608.36	164149.72
+1	Tank 16	13321.28	0	13321.28
+1	Tank 17	7098.84	0	7098.84
+1	Tank 18	13321.28	7098.84	20420.12
+1	Tank 19	2892.12	0	2892.12
+1	Tank 20	14022.4	0	14022.4
+1	Tank 20a	1489.88	0	1489.88
+1	Tank 20b	876.4	0	876.4
+1	Tank 21	10955	14022.4	24977.4
+1	Tank 22	8325.8	0	8325.8
+1	Tank 23	14548.24	8325.8	22874.04
+1	Tank 24	4732.56	0	4732.56
+1	Tank 25	2979.76	0	2979.76
+1	Nachchaduwa	1174376	258713.28	1433089.28
+2	Tank 1	764.4	0	764.4
+2	Tank 2	1747.2	764.4	2511.6
+2	Tank 3	1954.68	2511.6	4466.28
+2	Tank 4	218.4	0	218.4
+2	Tank 5	1692.6	4684.68	6377.28
+2	Tank 6	1998.36	0	1998.36
+2	Tank 7	1081.08	1998.36	3079.44
+2	Tank 8	480.48	0	480.48
+2	Tank 9	316.68	0	316.68
+2	Tank 10	1015.56	0	1015.56
+2	Tank 11	1070.16	0	1070.16
+2	Tank 12	1004.64	1070.16	2074.8
+2	Tank 13	1474.2	0	1474.2
+2	Tank 14	458.64	0	458.64
+2	Tank 15	5176.08	15277.08	20453.16
+2	Tank 16	1659.84	0	1659.84
+2	Tank 17	884.52	0	884.52
+2	Tank 18	1659.84	884.52	2544.36
+2	Tank 19	360.36	0	360.36
+2	Tank 20	1747.2	0	1747.2
+2	Tank 20a	185.64	0	185.64
+2	Tank 20b	109.2	0	109.2
+2	Tank 21	1365	1747.2	3112.2
+2	Tank 22	1037.4	0	1037.4
+2	Tank 23	1812.72	1037.4	2850.12
+2	Tank 24	589.68	0	589.68
+2	Tank 25	371.28	0	371.28
+2	Nachchaduwa	146328	32235.84	178563.84
+3	Tank 1	6781.6	0	6781.6
+3	Tank 2	15500.8	6781.6	22282.4
+3	Tank 3	17341.52	22282.4	39623.92
+3	Tank 4	1937.6	0	1937.6
+3	Tank 5	15016.4	41561.52	56577.92
+3	Tank 6	17729.04	0	17729.04
+3	Tank 7	9591.12	17729.04	27320.16
+3	Tank 8	4262.72	0	4262.72
+3	Tank 9	2809.52	0	2809.52
+3	Tank 10	9009.84	0	9009.84
+3	Tank 11	9494.24	0	9494.24
+3	Tank 12	8912.96	9494.24	18407.2
+3	Tank 13	13078.8	0	13078.8
+3	Tank 14	4068.96	0	4068.96
+3	Tank 15	45921.12	135535.12	181456.24
+3	Tank 16	14725.76	0	14725.76
+3	Tank 17	7847.28	0	7847.28
+3	Tank 18	14725.76	7847.28	22573.04
+3	Tank 19	3197.04	0	3197.04
+3	Tank 20	15500.8	0	15500.8
+3	Tank 20a	1646.96	0	1646.96
+3	Tank 20b	968.8	0	968.8
+3	Tank 21	12110	15500.8	27610.8
+3	Tank 22	9203.6	0	9203.6
+3	Tank 23	16082.08	9203.6	25285.68
+3	Tank 24	5231.52	0	5231.52
+3	Tank 25	3293.92	0	3293.92
+3	Nachchaduwa	1298192	285989.76	1584181.76
+4	Tank 1	2410.8	0	2410.8
+4	Tank 2	5510.4	2410.8	7921.2
+4	Tank 3	6164.76	7921.2	14085.96
+4	Tank 4	688.8	0	688.8
+4	Tank 5	5338.2	14774.76	20112.96
+4	Tank 6	6302.52	0	6302.52
+4	Tank 7	3409.56	6302.52	9712.08
+4	Tank 8	1515.36	0	1515.36
+4	Tank 9	998.76	0	998.76
+4	Tank 10	3202.92	0	3202.92
+4	Tank 11	3375.12	0	3375.12
+4	Tank 12	3168.48	3375.12	6543.6
+4	Tank 13	4649.4	0	4649.4
+4	Tank 14	1446.48	0	1446.48
+4	Tank 15	16324.56	48181.56	64506.12
+4	Tank 16	5234.88	0	5234.88
+4	Tank 17	2789.64	0	2789.64
+4	Tank 18	5234.88	2789.64	8024.52
+4	Tank 19	1136.52	0	1136.52
+4	Tank 20	5510.4	0	5510.4
+4	Tank 20a	585.48	0	585.48
+4	Tank 20b	344.4	0	344.4
+4	Tank 21	4305	5510.4	9815.4
+4	Tank 22	3271.8	0	3271.8
+4	Tank 23	5717.04	3271.8	8988.84
+4	Tank 24	1859.76	0	1859.76
+4	Tank 25	1170.96	0	1170.96
+4	Nachchaduwa	461496	101666.88	563162.88
+5	Tank 1	2352	0	2352
+5	Tank 2	5376	2352	7728
+5	Tank 3	6014.4	7728	13742.4
+5	Tank 4	672	0	672
+5	Tank 5	5208	14414.4	19622.4
+5	Tank 6	6148.8	0	6148.8
+5	Tank 7	3326.4	6148.8	9475.2
+5	Tank 8	1478.4	0	1478.4
+5	Tank 9	974.4	0	974.4
+5	Tank 10	3124.8	0	3124.8
+5	Tank 11	3292.8	0	3292.8
+5	Tank 12	3091.2	3292.8	6384
+5	Tank 13	4536	0	4536
+5	Tank 14	1411.2	0	1411.2
+5	Tank 15	15926.4	47006.4	62932.8
+5	Tank 16	5107.2	0	5107.2
+5	Tank 17	2721.6	0	2721.6
+5	Tank 18	5107.2	2721.6	7828.8
+5	Tank 19	1108.8	0	1108.8
+5	Tank 20	5376	0	5376
+5	Tank 20a	571.2	0	571.2
+5	Tank 20b	336	0	336
+5	Tank 21	4200	5376	9576
+5	Tank 22	3192	0	3192
+5	Tank 23	5577.6	3192	8769.6
+5	Tank 24	1814.4	0	1814.4
+5	Tank 25	1142.4	0	1142.4
+5	Nachchaduwa	450240	99187.2	549427.2
+6	Tank 1	3528	0	3528
+6	Tank 2	8064	3528	11592
+6	Tank 3	9021.6	11592	20613.6
+6	Tank 4	1008	0	1008
+6	Tank 5	7812	21621.6	29433.6
+6	Tank 6	9223.2	0	9223.2
+6	Tank 7	4989.6	9223.2	14212.8
+6	Tank 8	2217.6	0	2217.6
+6	Tank 9	1461.6	0	1461.6
+6	Tank 10	4687.2	0	4687.2
+6	Tank 11	4939.2	0	4939.2
+6	Tank 12	4636.8	4939.2	9576
+6	Tank 13	6804	0	6804
+6	Tank 14	2116.8	0	2116.8
+6	Tank 15	23889.6	70509.6	94399.2
+6	Tank 16	7660.8	0	7660.8
+6	Tank 17	4082.4	0	4082.4
+6	Tank 18	7660.8	4082.4	11743.2
+6	Tank 19	1663.2	0	1663.2
+6	Tank 20	8064	0	8064
+6	Tank 20a	856.8	0	856.8
+6	Tank 20b	504	0	504
+6	Tank 21	6300	8064	14364
+6	Tank 22	4788	0	4788
+6	Tank 23	8366.4	4788	13154.4
+6	Tank 24	2721.6	0	2721.6
+6	Tank 25	1713.6	0	1713.6
+6	Nachchaduwa	675360	148780.8	824140.8
+7	Tank 1	4566.8	0	4566.8
+7	Tank 2	10438.4	4566.8	15005.2
+7	Tank 3	11677.96	15005.2	26683.16
+7	Tank 4	1304.8	0	1304.8
+7	Tank 5	10112.2	27987.96	38100.16
+7	Tank 6	11938.92	0	11938.92
+7	Tank 7	6458.76	11938.92	18397.68
+7	Tank 8	2870.56	0	2870.56
+7	Tank 9	1891.96	0	1891.96
+7	Tank 10	6067.32	0	6067.32
+7	Tank 11	6393.52	0	6393.52
+7	Tank 12	6002.08	6393.52	12395.6
+7	Tank 13	8807.4	0	8807.4
+7	Tank 14	2740.08	0	2740.08
+7	Tank 15	30923.76	91270.76	122194.52
+7	Tank 16	9916.48	0	9916.48
+7	Tank 17	5284.44	0	5284.44
+7	Tank 18	9916.48	5284.44	15200.92
+7	Tank 19	2152.92	0	2152.92
+7	Tank 20	10438.4	0	10438.4
+7	Tank 20a	1109.08	0	1109.08
+7	Tank 20b	652.4	0	652.4
+7	Tank 21	8155	10438.4	18593.4
+7	Tank 22	6197.8	0	6197.8
+7	Tank 23	10829.84	6197.8	17027.64
+7	Tank 24	3522.96	0	3522.96
+7	Tank 25	2218.16	0	2218.16
+7	Nachchaduwa	874216	192588.48	1066804.48
+8	Tank 1	1058.4	0	1058.4
+8	Tank 2	2419.2	1058.4	3477.6
+8	Tank 3	2706.48	3477.6	6184.08
+8	Tank 4	302.4	0	302.4
+8	Tank 5	2343.6	6486.48	8830.08
+8	Tank 6	2766.96	0	2766.96
+8	Tank 7	1496.88	2766.96	4263.84
+8	Tank 8	665.28	0	665.28
+8	Tank 9	438.48	0	438.48
+8	Tank 10	1406.16	0	1406.16
+8	Tank 11	1481.76	0	1481.76
+8	Tank 12	1391.04	1481.76	2872.8
+8	Tank 13	2041.2	0	2041.2
+8	Tank 14	635.04	0	635.04
+8	Tank 15	7166.88	21152.88	28319.76
+8	Tank 16	2298.24	0	2298.24
+8	Tank 17	1224.72	0	1224.72
+8	Tank 18	2298.24	1224.72	3522.96
+8	Tank 19	498.96	0	498.96
+8	Tank 20	2419.2	0	2419.2
+8	Tank 20a	257.04	0	257.04
+8	Tank 20b	151.2	0	151.2
+8	Tank 21	1890	2419.2	4309.2
+8	Tank 22	1436.4	0	1436.4
+8	Tank 23	2509.92	1436.4	3946.32
+8	Tank 24	816.48	0	816.48
+8	Tank 25	514.08	0	514.08
+8	Nachchaduwa	202608	44634.24	247242.24
+9	Tank 1	960.4	0	960.4
+9	Tank 2	2195.2	960.4	3155.6
+9	Tank 3	2455.88	3155.6	5611.48
+9	Tank 4	274.4	0	274.4
+9	Tank 5	2126.6	5885.88	8012.48
+9	Tank 6	2510.76	0	2510.76
+9	Tank 7	1358.28	2510.76	3869.04
+9	Tank 8	603.68	0	603.68
+9	Tank 9	397.88	0	397.88
+9	Tank 10	1275.96	0	1275.96
+9	Tank 11	1344.56	0	1344.56
+9	Tank 12	1262.24	1344.56	2606.8
+9	Tank 13	1852.2	0	1852.2
+9	Tank 14	576.24	0	576.24
+9	Tank 15	6503.28	19194.28	25697.56
+9	Tank 16	2085.44	0	2085.44
+9	Tank 17	1111.32	0	1111.32
+9	Tank 18	2085.44	1111.32	3196.76
+9	Tank 19	452.76	0	452.76
+9	Tank 20	2195.2	0	2195.2
+9	Tank 20a	233.24	0	233.24
+9	Tank 20b	137.2	0	137.2
+9	Tank 21	1715	2195.2	3910.2
+9	Tank 22	1303.4	0	1303.4
+9	Tank 23	2277.52	1303.4	3580.92
+9	Tank 24	740.88	0	740.88
+9	Tank 25	466.48	0	466.48
+9	Nachchaduwa	183848	40501.44	224349.44
+10	Tank 1	529.2	0	529.2
+10	Tank 2	1209.6	529.2	1738.8
+10	Tank 3	1353.24	1738.8	3092.04
+10	Tank 4	151.2	0	151.2
+10	Tank 5	1171.8	3243.24	4415.04
+10	Tank 6	1383.48	0	1383.48
+10	Tank 7	748.44	1383.48	2131.92
+10	Tank 8	332.64	0	332.64
+10	Tank 9	219.24	0	219.24
+10	Tank 10	703.08	0	703.08
+10	Tank 11	740.88	0	740.88
+10	Tank 12	695.52	740.88	1436.4
+10	Tank 13	1020.6	0	1020.6
+10	Tank 14	317.52	0	317.52
+10	Tank 15	3583.44	10576.44	14159.88
+10	Tank 16	1149.12	0	1149.12
+10	Tank 17	612.36	0	612.36
+10	Tank 18	1149.12	612.36	1761.48
+10	Tank 19	249.48	0	249.48
+10	Tank 20	1209.6	0	1209.6
+10	Tank 20a	128.52	0	128.52
+10	Tank 20b	75.6	0	75.6
+10	Tank 21	945	1209.6	2154.6
+10	Tank 22	718.2	0	718.2
+10	Tank 23	1254.96	718.2	1973.16
+10	Tank 24	408.24	0	408.24
+10	Tank 25	257.04	0	257.04
+10	Nachchaduwa	101304	22317.12	123621.12
+11	Tank 1	901.6	0	901.6
+11	Tank 2	2060.8	901.6	2962.4
+11	Tank 3	2305.52	2962.4	5267.92
+11	Tank 4	257.6	0	257.6
+11	Tank 5	1996.4	5525.52	7521.92
+11	Tank 6	2357.04	0	2357.04
+11	Tank 7	1275.12	2357.04	3632.16
+11	Tank 8	566.72	0	566.72
+11	Tank 9	373.52	0	373.52
+11	Tank 10	1197.84	0	1197.84
+11	Tank 11	1262.24	0	1262.24
+11	Tank 12	1184.96	1262.24	2447.2
+11	Tank 13	1738.8	0	1738.8
+11	Tank 14	540.96	0	540.96
+11	Tank 15	6105.12	18019.12	24124.24
+11	Tank 16	1957.76	0	1957.76
+11	Tank 17	1043.28	0	1043.28
+11	Tank 18	1957.76	1043.28	3001.04
+11	Tank 19	425.04	0	425.04
+11	Tank 20	2060.8	0	2060.8
+11	Tank 20a	218.96	0	218.96
+11	Tank 20b	128.8	0	128.8
+11	Tank 21	1610	2060.8	3670.8
+11	Tank 22	1223.6	0	1223.6
+11	Tank 23	2138.08	1223.6	3361.68
+11	Tank 24	695.52	0	695.52
+11	Tank 25	437.92	0	437.92
+11	Nachchaduwa	172592	38021.76	210613.76
+12	Tank 1	1744.4	0	1744.4
+12	Tank 2	3987.2	1744.4	5731.6
+12	Tank 3	4460.68	5731.6	10192.28
+12	Tank 4	498.4	0	498.4
+12	Tank 5	3862.6	10690.68	14553.28
+12	Tank 6	4560.36	0	4560.36
+12	Tank 7	2467.08	4560.36	7027.44
+12	Tank 8	1096.48	0	1096.48
+12	Tank 9	722.68	0	722.68
+12	Tank 10	2317.56	0	2317.56
+12	Tank 11	2442.16	0	2442.16
+12	Tank 12	2292.64	2442.16	4734.8
+12	Tank 13	3364.2	0	3364.2
+12	Tank 14	1046.64	0	1046.64
+12	Tank 15	11812.08	34863.08	46675.16
+12	Tank 16	3787.84	0	3787.84
+12	Tank 17	2018.52	0	2018.52
+12	Tank 18	3787.84	2018.52	5806.36
+12	Tank 19	822.36	0	822.36
+12	Tank 20	3987.2	0	3987.2
+12	Tank 20a	423.64	0	423.64
+12	Tank 20b	249.2	0	249.2
+12	Tank 21	3115	3987.2	7102.2
+12	Tank 22	2367.4	0	2367.4
+12	Tank 23	4136.72	2367.4	6504.12
+12	Tank 24	1345.68	0	1345.68
+12	Tank 25	847.28	0	847.28
+12	Nachchaduwa	333928	73563.84	407491.84
+13	Tank 1	1489.6	0	1489.6
+13	Tank 2	3404.8	1489.6	4894.4
+13	Tank 3	3809.12	4894.4	8703.52
+13	Tank 4	425.6	0	425.6
+13	Tank 5	3298.4	9129.12	12427.52
+13	Tank 6	3894.24	0	3894.24
+13	Tank 7	2106.72	3894.24	6000.96
+13	Tank 8	936.32	0	936.32
+13	Tank 9	617.12	0	617.12
+13	Tank 10	1979.04	0	1979.04
+13	Tank 11	2085.44	0	2085.44
+13	Tank 12	1957.76	2085.44	4043.2
+13	Tank 13	2872.8	0	2872.8
+13	Tank 14	893.76	0	893.76
+13	Tank 15	10086.72	29770.72	39857.44
+13	Tank 16	3234.56	0	3234.56
+13	Tank 17	1723.68	0	1723.68
+13	Tank 18	3234.56	1723.68	4958.24
+13	Tank 19	702.24	0	702.24
+13	Tank 20	3404.8	0	3404.8
+13	Tank 20a	361.76	0	361.76
+13	Tank 20b	212.8	0	212.8
+13	Tank 21	2660	3404.8	6064.8
+13	Tank 22	2021.6	0	2021.6
+13	Tank 23	3532.48	2021.6	5554.08
+13	Tank 24	1149.12	0	1149.12
+13	Tank 25	723.52	0	723.52
+13	Nachchaduwa	285152	62818.56	347970.56
+14	Tank 1	7663.6	0	7663.6
+14	Tank 2	17516.8	7663.6	25180.4
+14	Tank 3	19596.92	25180.4	44777.32
+14	Tank 4	2189.6	0	2189.6
+14	Tank 5	16969.4	46966.92	63936.32
+14	Tank 6	20034.84	0	20034.84
+14	Tank 7	10838.52	20034.84	30873.36
+14	Tank 8	4817.12	0	4817.12
+14	Tank 9	3174.92	0	3174.92
+14	Tank 10	10181.64	0	10181.64
+14	Tank 11	10729.04	0	10729.04
+14	Tank 12	10072.16	10729.04	20801.2
+14	Tank 13	14779.8	0	14779.8
+14	Tank 14	4598.16	0	4598.16
+14	Tank 15	51893.52	153162.52	205056.04
+14	Tank 16	16640.96	0	16640.96
+14	Tank 17	8867.88	0	8867.88
+14	Tank 18	16640.96	8867.88	25508.84
+14	Tank 19	3612.84	0	3612.84
+14	Tank 20	17516.8	0	17516.8
+14	Tank 20a	1861.16	0	1861.16
+14	Tank 20b	1094.8	0	1094.8
+14	Tank 21	13685	17516.8	31201.8
+14	Tank 22	10400.6	0	10400.6
+14	Tank 23	18173.68	10400.6	28574.28
+14	Tank 24	5911.92	0	5911.92
+14	Tank 25	3722.32	0	3722.32
+14	Nachchaduwa	1467032	323184.96	1790216.96
+15	Tank 1	1176	0	1176
+15	Tank 2	2688	1176	3864
+15	Tank 3	3007.2	3864	6871.2
+15	Tank 4	336	0	336
+15	Tank 5	2604	7207.2	9811.2
+15	Tank 6	3074.4	0	3074.4
+15	Tank 7	1663.2	3074.4	4737.6
+15	Tank 8	739.2	0	739.2
+15	Tank 9	487.2	0	487.2
+15	Tank 10	1562.4	0	1562.4
+15	Tank 11	1646.4	0	1646.4
+15	Tank 12	1545.6	1646.4	3192
+15	Tank 13	2268	0	2268
+15	Tank 14	705.6	0	705.6
+15	Tank 15	7963.2	23503.2	31466.4
+15	Tank 16	2553.6	0	2553.6
+15	Tank 17	1360.8	0	1360.8
+15	Tank 18	2553.6	1360.8	3914.4
+15	Tank 19	554.4	0	554.4
+15	Tank 20	2688	0	2688
+15	Tank 20a	285.6	0	285.6
+15	Tank 20b	168	0	168
+15	Tank 21	2100	2688	4788
+15	Tank 22	1596	0	1596
+15	Tank 23	2788.8	1596	4384.8
+15	Tank 24	907.2	0	907.2
+15	Tank 25	571.2	0	571.2
+15	Nachchaduwa	225120	49593.6	274713.6
+16	Tank 1	764.4	0	764.4
+16	Tank 2	1747.2	764.4	2511.6
+16	Tank 3	1954.68	2511.6	4466.28
+16	Tank 4	218.4	0	218.4
+16	Tank 5	1692.6	4684.68	6377.28
+16	Tank 6	1998.36	0	1998.36
+16	Tank 7	1081.08	1998.36	3079.44
+16	Tank 8	480.48	0	480.48
+16	Tank 9	316.68	0	316.68
+16	Tank 10	1015.56	0	1015.56
+16	Tank 11	1070.16	0	1070.16
+16	Tank 12	1004.64	1070.16	2074.8
+16	Tank 13	1474.2	0	1474.2
+16	Tank 14	458.64	0	458.64
+16	Tank 15	5176.08	15277.08	20453.16
+16	Tank 16	1659.84	0	1659.84
+16	Tank 17	884.52	0	884.52
+16	Tank 18	1659.84	884.52	2544.36
+16	Tank 19	360.36	0	360.36
+16	Tank 20	1747.2	0	1747.2
+16	Tank 20a	185.64	0	185.64
+16	Tank 20b	109.2	0	109.2
+16	Tank 21	1365	1747.2	3112.2
+16	Tank 22	1037.4	0	1037.4
+16	Tank 23	1812.72	1037.4	2850.12
+16	Tank 24	589.68	0	589.68
+16	Tank 25	371.28	0	371.28
+16	Nachchaduwa	146328	32235.84	178563.84
+17	Tank 1	1156.4	0	1156.4
+17	Tank 2	2643.2	1156.4	3799.6
+17	Tank 3	2957.08	3799.6	6756.68
+17	Tank 4	330.4	0	330.4
+17	Tank 5	2560.6	7087.08	9647.68
+17	Tank 6	3023.16	0	3023.16
+17	Tank 7	1635.48	3023.16	4658.64
+17	Tank 8	726.88	0	726.88
+17	Tank 9	479.08	0	479.08
+17	Tank 10	1536.36	0	1536.36
+17	Tank 11	1618.96	0	1618.96
+17	Tank 12	1519.84	1618.96	3138.8
+17	Tank 13	2230.2	0	2230.2
+17	Tank 14	693.84	0	693.84
+17	Tank 15	7830.48	23111.48	30941.96
+17	Tank 16	2511.04	0	2511.04
+17	Tank 17	1338.12	0	1338.12
+17	Tank 18	2511.04	1338.12	3849.16
+17	Tank 19	545.16	0	545.16
+17	Tank 20	2643.2	0	2643.2
+17	Tank 20a	280.84	0	280.84
+17	Tank 20b	165.2	0	165.2
+17	Tank 21	2065	2643.2	4708.2
+17	Tank 22	1569.4	0	1569.4
+17	Tank 23	2742.32	1569.4	4311.72
+17	Tank 24	892.08	0	892.08
+17	Tank 25	561.68	0	561.68
+17	Nachchaduwa	221368	48767.04	270135.04
+18	Tank 1	1097.6	0	1097.6
+18	Tank 2	2508.8	1097.6	3606.4
+18	Tank 3	2806.72	3606.4	6413.12
+18	Tank 4	313.6	0	313.6
+18	Tank 5	2430.4	6726.72	9157.12
+18	Tank 6	2869.44	0	2869.44
+18	Tank 7	1552.32	2869.44	4421.76
+18	Tank 8	689.92	0	689.92
+18	Tank 9	454.72	0	454.72
+18	Tank 10	1458.24	0	1458.24
+18	Tank 11	1536.64	0	1536.64
+18	Tank 12	1442.56	1536.64	2979.2
+18	Tank 13	2116.8	0	2116.8
+18	Tank 14	658.56	0	658.56
+18	Tank 15	7432.32	21936.32	29368.64
+18	Tank 16	2383.36	0	2383.36
+18	Tank 17	1270.08	0	1270.08
+18	Tank 18	2383.36	1270.08	3653.44
+18	Tank 19	517.44	0	517.44
+18	Tank 20	2508.8	0	2508.8
+18	Tank 20a	266.56	0	266.56
+18	Tank 20b	156.8	0	156.8
+18	Tank 21	1960	2508.8	4468.8
+18	Tank 22	1489.6	0	1489.6
+18	Tank 23	2602.88	1489.6	4092.48
+18	Tank 24	846.72	0	846.72
+18	Tank 25	533.12	0	533.12
+18	Nachchaduwa	210112	46287.36	256399.36
+19	Tank 1	8212.4	0	8212.4
+19	Tank 2	18771.2	8212.4	26983.6
+19	Tank 3	21000.28	26983.6	47983.88
+19	Tank 4	2346.4	0	2346.4
+19	Tank 5	18184.6	50330.28	68514.88
+19	Tank 6	21469.56	0	21469.56
+19	Tank 7	11614.68	21469.56	33084.24
+19	Tank 8	5162.08	0	5162.08
+19	Tank 9	3402.28	0	3402.28
+19	Tank 10	10910.76	0	10910.76
+19	Tank 11	11497.36	0	11497.36
+19	Tank 12	10793.44	11497.36	22290.8
+19	Tank 13	15838.2	0	15838.2
+19	Tank 14	4927.44	0	4927.44
+19	Tank 15	55609.68	164130.68	219740.36
+19	Tank 16	17832.64	0	17832.64
+19	Tank 17	9502.92	0	9502.92
+19	Tank 18	17832.64	9502.92	27335.56
+19	Tank 19	3871.56	0	3871.56
+19	Tank 20	18771.2	0	18771.2
+19	Tank 20a	1994.44	0	1994.44
+19	Tank 20b	1173.2	0	1173.2
+19	Tank 21	14665	18771.2	33436.2
+19	Tank 22	11145.4	0	11145.4
+19	Tank 23	19475.12	11145.4	30620.52
+19	Tank 24	6335.28	0	6335.28
+19	Tank 25	3988.88	0	3988.88
+19	Nachchaduwa	1572088	346328.64	1918416.64
+20	Tank 1	1293.6	0	1293.6
+20	Tank 2	2956.8	1293.6	4250.4
+20	Tank 3	3307.92	4250.4	7558.32
+20	Tank 4	369.6	0	369.6
+20	Tank 5	2864.4	7927.92	10792.32
+20	Tank 6	3381.84	0	3381.84
+20	Tank 7	1829.52	3381.84	5211.36
+20	Tank 8	813.12	0	813.12
+20	Tank 9	535.92	0	535.92
+20	Tank 10	1718.64	0	1718.64
+20	Tank 11	1811.04	0	1811.04
+20	Tank 12	1700.16	1811.04	3511.2
+20	Tank 13	2494.8	0	2494.8
+20	Tank 14	776.16	0	776.16
+20	Tank 15	8759.52	25853.52	34613.04
+20	Tank 16	2808.96	0	2808.96
+20	Tank 17	1496.88	0	1496.88
+20	Tank 18	2808.96	1496.88	4305.84
+20	Tank 19	609.84	0	609.84
+20	Tank 20	2956.8	0	2956.8
+20	Tank 20a	314.16	0	314.16
+20	Tank 20b	184.8	0	184.8
+20	Tank 21	2310	2956.8	5266.8
+20	Tank 22	1755.6	0	1755.6
+20	Tank 23	3067.68	1755.6	4823.28
+20	Tank 24	997.92	0	997.92
+20	Tank 25	628.32	0	628.32
+20	Nachchaduwa	247632	54552.96	302184.96
+21	Tank 1	2724.4	0	2724.4
+21	Tank 2	6227.2	2724.4	8951.6
+21	Tank 3	6966.68	8951.6	15918.28
+21	Tank 4	778.4	0	778.4
+21	Tank 5	6032.6	16696.68	22729.28
+21	Tank 6	7122.36	0	7122.36
+21	Tank 7	3853.08	7122.36	10975.44
+21	Tank 8	1712.48	0	1712.48
+21	Tank 9	1128.68	0	1128.68
+21	Tank 10	3619.56	0	3619.56
+21	Tank 11	3814.16	0	3814.16
+21	Tank 12	3580.64	3814.16	7394.8
+21	Tank 13	5254.2	0	5254.2
+21	Tank 14	1634.64	0	1634.64
+21	Tank 15	18448.08	54449.08	72897.16
+21	Tank 16	5915.84	0	5915.84
+21	Tank 17	3152.52	0	3152.52
+21	Tank 18	5915.84	3152.52	9068.36
+21	Tank 19	1284.36	0	1284.36
+21	Tank 20	6227.2	0	6227.2
+21	Tank 20a	661.64	0	661.64
+21	Tank 20b	389.2	0	389.2
+21	Tank 21	4865	6227.2	11092.2
+21	Tank 22	3697.4	0	3697.4
+21	Tank 23	6460.72	3697.4	10158.12
+21	Tank 24	2101.68	0	2101.68
+21	Tank 25	1323.28	0	1323.28
+21	Nachchaduwa	521528	114891.84	636419.84
+22	Tank 1	3763.2	0	3763.2
+22	Tank 2	8601.6	3763.2	12364.8
+22	Tank 3	9623.04	12364.8	21987.84
+22	Tank 4	1075.2	0	1075.2
+22	Tank 5	8332.8	23063.04	31395.84
+22	Tank 6	9838.08	0	9838.08
+22	Tank 7	5322.24	9838.08	15160.32
+22	Tank 8	2365.44	0	2365.44
+22	Tank 9	1559.04	0	1559.04
+22	Tank 10	4999.68	0	4999.68
+22	Tank 11	5268.48	0	5268.48
+22	Tank 12	4945.92	5268.48	10214.4
+22	Tank 13	7257.6	0	7257.6
+22	Tank 14	2257.92	0	2257.92
+22	Tank 15	25482.24	75210.24	100692.48
+22	Tank 16	8171.52	0	8171.52
+22	Tank 17	4354.56	0	4354.56
+22	Tank 18	8171.52	4354.56	12526.08
+22	Tank 19	1774.08	0	1774.08
+22	Tank 20	8601.6	0	8601.6
+22	Tank 20a	913.92	0	913.92
+22	Tank 20b	537.6	0	537.6
+22	Tank 21	6720	8601.6	15321.6
+22	Tank 22	5107.2	0	5107.2
+22	Tank 23	8924.16	5107.2	14031.36
+22	Tank 24	2903.04	0	2903.04
+22	Tank 25	1827.84	0	1827.84
+22	Nachchaduwa	720384	158699.52	879083.52`;
+
+        // 1. Parse the data
+        const parsedData = {};
+        const rows = rawData.trim().split('\n');
+
+        rows.forEach(row => {
+            const parts = row.split('\t');
+            if (parts.length >= 5) {
+                const week = parts[0];
+                if (!parsedData[week]) parsedData[week] = [];
+                parsedData[week].push({
+                    tank: parts[1],
+                    runoff: parts[2],
+                    upstream: parts[3],
+                    total: parts[4]
+                });
+            }
+        });
+
+        // 2. State management
+        let currentWeek = '1';
+        const weeksAvailable = Object.keys(parsedData);
+
+        // DOM Elements
+        const weekSelectorEl = document.getElementById('weekSelector');
+        const tableBodyEl = document.getElementById('tableBody');
+        const currentWeekTitleEl = document.getElementById('currentWeekTitle');
+
+        // 3. Render functions
+        function renderWeekButtons() {
+            weekSelectorEl.innerHTML = '';
+            weeksAvailable.forEach(week => {
+                const isActive = week === currentWeek;
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-4 py-3 text-sm font-medium transition-colors border-b border-gray-100 flex justify-between items-center ${isActive ? 'bg-blue-50 text-blue-700 border-l-4 border-l-blue-600' : 'text-gray-600 hover:bg-gray-50 border-l-4 border-l-transparent'}`;
+                btn.innerHTML = `
+                    <span>Week ${week}</span>
+                    <svg class="w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-300'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                `;
+                btn.onclick = () => {
+                    currentWeek = week;
+                    renderWeekButtons(); // Re-render to update active state
+                    renderTableData();
+                };
+                weekSelectorEl.appendChild(btn);
+            });
+        }
+
+        function renderTableData() {
+            currentWeekTitleEl.textContent = `Week ${currentWeek} Overview`;
+            tableBodyEl.innerHTML = '';
+
+            const dataForWeek = parsedData[currentWeek] || [];
+
+            dataForWeek.forEach((row, idx) => {
+                const isNachchaduwa = row.tank.toLowerCase() === 'nachchaduwa';
+
+                const tr = document.createElement('tr');
+                // Apply a distinct style for the final sink tank (Nachchaduwa)
+                tr.className = isNachchaduwa
+                    ? 'bg-blue-50/50 hover:bg-blue-100 transition-colors border-t-2 border-blue-200'
+                    : 'hover:bg-slate-50 transition-colors border-b border-gray-50';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 border-r border-gray-100">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 rounded-full mr-3 ${isNachchaduwa ? 'bg-blue-600' : 'bg-teal-400'}"></div>
+                            <span class="${isNachchaduwa ? 'font-bold text-blue-800 text-base' : 'font-medium text-slate-700'}">${row.tank}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right border-r border-gray-100 ${isNachchaduwa ? 'font-semibold text-slate-800' : 'text-slate-600'}">
+                        ${formatNumber(row.runoff)}
+                    </td>
+                    <td class="px-6 py-4 text-right border-r border-gray-100 ${isNachchaduwa ? 'font-semibold text-slate-800' : 'text-slate-600'}">
+                        ${formatNumber(row.upstream)}
+                    </td>
+                    <td class="px-6 py-4 text-right ${isNachchaduwa ? 'font-bold text-blue-700 text-base' : 'font-semibold text-slate-800'}">
+                        ${formatNumber(row.total)}
+                    </td>
+                `;
+                tableBodyEl.appendChild(tr);
+            });
+        }
+
+        // Initialize App
+        renderWeekButtons();
+        renderTableData();
+    </script>
+</body>
+
+</html>
